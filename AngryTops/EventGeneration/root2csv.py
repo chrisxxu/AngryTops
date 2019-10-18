@@ -255,19 +255,25 @@ for ientry in range(n_entries):
     flip_eta = False
     # Set the phi angle of the lepton to zero
     if len(sys.argv) > 4 and sys.argv[4] == 'aa': phi = -1 * lep.Phi()
-    if len(sys.argv) > 5 and sys.argv[5] == 'bb': flip_eta = True
+    ## Turn off all augmentations
+    #if len(sys.argv) > 5 and sys.argv[5] == 'bb': flip_eta = True
     print("Writing new row to csv file")
     for i in range(n_data_aug):
     # make event wrapper
-        lep_aug, jets_aug, met_phi_aug = RotateEvent(lep, jets, met_phi, phi)
-        lep_flipped, jets_flipped = FlipEta(lep_aug, jets_aug)
-        sjets0, target_W_had, target_b_had, target_t_had, target_W_lep, target_b_lep, target_t_lep = MakeInput(jets_aug, W_had, b_had, t_had, W_lep, b_lep, t_lep )
-        sjets1, _, _, _, _, _, _ = MakeInput(jets_flipped, W_had, b_had, t_had, W_lep, b_lep, t_lep )
+        ## Turn off all augmentations
+        #lep_aug, jets_aug, met_phi_aug = RotateEvent(lep, jets, met_phi, phi)
+        #lep_flipped, jets_flipped = FlipEta(lep_aug, jets_aug)
+        #sjets0, target_W_had, target_b_had, target_t_had, target_W_lep, target_b_lep, target_t_lep = MakeInput(jets_aug, W_had, b_had, t_had, W_lep, b_lep, t_lep )
+        #sjets1, _, _, _, _, _, _ = MakeInput(jets_flipped, W_had, b_had, t_had, W_lep, b_lep, t_lep )
+
+        sjets0, target_W_had, target_b_had, target_t_had, target_W_lep, target_b_lep, target_t_lep = MakeInput(jets, W_had, b_had, t_had, W_lep, b_lep, t_lep )
+        sjets1, _, _, _, _, _, _ = MakeInput(jets, W_had, b_had, t_had, W_lep, b_lep, t_lep )
 
     # write out
         csvwriter.writerow( (
         "%i" % runNumber, "%i" % eventNumber, "%.5f" % weight, "%i" % jets_n, "%i" % bjets_n,
-        "%.5f" % lep_aug.Px(),     "%.5f" % lep_aug.Py(),     "%.5f" % lep_aug.Pz(),     "%.5f" % lep_aug.E(),      "%.5f" % met_met,      "%.5f" % met_phi_aug,
+        #"%.5f" % lep_aug.Px(),     "%.5f" % lep_aug.Py(),     "%.5f" % lep_aug.Pz(),     "%.5f" % lep_aug.E(),      "%.5f" % met_met,      "%.5f" % met_phi_aug,
+        "%.5f" % lep.Px(),     "%.5f" % lep.Py(),     "%.5f" % lep.Pz(),     "%.5f" % lep.E(),      "%.5f" % met_met,      "%.5f" % met_phi,
         "%.5f" % sjets0[0][0],  "%.5f" % sjets0[0][1],  "%.5f" % sjets0[0][2],  "%.5f" % sjets0[0][3],  "%.5f" % sjets0[0][4],  "%.5f" % sjets0[0][5],
         "%.5f" % sjets0[1][0],  "%.5f" % sjets0[1][1],  "%.5f" % sjets0[1][2],  "%.5f" % sjets0[1][3],  "%.5f" % sjets0[1][4],  "%.5f" % sjets0[1][5],
         "%.5f" % sjets0[2][0],  "%.5f" % sjets0[2][1],  "%.5f" % sjets0[2][2],  "%.5f" % sjets0[2][3],  "%.5f" % sjets0[2][4],  "%.5f" % sjets0[2][5],
@@ -279,7 +285,7 @@ for ientry in range(n_entries):
         "%.5f" % target_b_lep[0], "%.5f" % target_b_lep[1], "%.5f" % target_b_lep[2], "%.5f" % target_b_lep[3], "%.5f" % target_b_lep[4],
         "%.5f" % target_t_had[0], "%.5f" % target_t_had[1], "%.5f" % target_t_had[2], "%.5f" % target_t_had[3], "%.5f" % target_t_had[4],
         "%.5f" % target_t_lep[0], "%.5f" % target_t_lep[1], "%.5f" % target_t_lep[2], "%.5f" % target_t_lep[3], "%.5f" % target_t_lep[4],
-        "%.5f" % lep_aug.Pt(),     "%.5f" % lep_aug.Eta(),     "%.5f" % lep_aug.Phi(),
+        "%.5f" % lep.Pt(),     "%.5f" % lep.Eta(),     "%.5f" % lep.Phi(),
         "%.5f" % sjets0[0][6],  "%.5f" % sjets0[0][7],  "%.5f" % sjets0[0][8],
         "%.5f" % sjets0[1][6],  "%.5f" % sjets0[1][7],  "%.5f" % sjets0[1][8],
         "%.5f" % sjets0[2][6],  "%.5f" % sjets0[2][7],  "%.5f" % sjets0[2][8],
