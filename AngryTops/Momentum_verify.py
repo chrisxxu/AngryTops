@@ -56,14 +56,19 @@ def get_input_output(input_filename, **kwargs):
 	# Cartesian; eg. we dont use p_psi here
 	rep = 'pxpypzEM'
 
-	# A magical
+	# Read the data from the csv file
 	representations = [lep_cartE, jets_pxpypzEM, output_columns_pxpypzE]
 	df = pd.read_csv(input_filename, names=column_names)
 	lep = df[lep_cartE].values
 	print(lep)
 
-	#m_t^2 = (E_w+E_b)^2 - (p_w+p_b)^2 
-
+	# compute m_t^2 - (E_w+E_b)^2 = (p_w+p_b)^2, it should be zero
+	# Assume that p is 3-momentum 
+	print(df['target_t_lep_M'].values ** 2  \
+		- (df['target_W_lep_E'].values  + df['target_b_lep_E'].values)**2 \
+		+ (df['target_W_lep_Px'].values + df['target_b_lep_Px'].values)**2 \
+		+ (df['target_W_lep_Py'].values + df['target_b_lep_Py'].values)**2 \
+		+ (df['target_W_lep_Pz'].values + df['target_b_lep_Pz'].values)**2 )
 
 if __name__=='__main__':
 	#(training_input, training_output), (testing_input, testing_output), \
