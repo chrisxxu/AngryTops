@@ -108,7 +108,8 @@ def train_model(model_name, train_dir, csv_file, log_training=True, load_model=F
     early_stopping = EarlyStopping(monitor='val_loss', patience=3)
     try:
         history = model.fit(training_input, training_output,  epochs=EPOCHES,
-                            batch_size=BATCH_SIZE, validation_split=0.1,
+                            batch_size=BATCH_SIZE, validation_split=0.1
+                            ,
                             callbacks = [early_stopping]
                             )
     except KeyboardInterrupt:
