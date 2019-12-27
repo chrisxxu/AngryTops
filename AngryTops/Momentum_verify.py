@@ -62,48 +62,99 @@ rep = 'pxpypzEM'
 # Read the data from the csv file
 representations = [lep_cartE, jets_pxpypzEM, output_columns_pxpypzE]
 df = pd.read_csv(input_filename, names=column_names)
+
+# Initialize the dataframe to record the outliers
 df_outliers = pd.DataFrame(columns = column_names)
 
-# Initalize the array for data storing
-mass_actual = np.zeros(df.shape[0])
-mass_compute = np.zeros(df.shape[0])
+actual_data_points = ['mass', 'phi', 'eta', 'Pt']
+# Initialize the actual values
+df_actual = pd.DataFrame(np.zeros((df.shape[0], len(actual_data_points))), columns = actual_data_points)
+df_computed = pd.DataFrame(np.zeros((df.shape[0], len(actual_data_points))), columns = actual_data_points)
+
+
 mass_diff = np.zeros(df.shape[0])
+phi_diff = np.zeros(df.shape[0])
+eta_diff = np.zeros(df.shape[0])
 
-# Loops through df(Data Frame, read from csv)
-# Leptonics for now
-for index, event in df.iterrows():
+# Loops through df(Data Frame, read from csv) of b
+# Leptonic first, then hadronic
+for type in ['lep', 'had']:
 
-    # compute m_t  = sqrt[(p_w+p_b)^2 + (E_w+E_b)^2], here p is 3-momentum
-    mass_compute[index] = np.sqrt((event['target_W_lep_E']  + event['target_b_lep_E'])**2 \
-        - (event['target_W_lep_Px'] + event['target_b_lep_Px'])**2 \
-        - (event['target_W_lep_Py'] + event['target_b_lep_Py'])**2 \
-        - (event['target_W_lep_Pz'] + event['target_b_lep_Pz'])**2 )
+    # loop through every single event
+    for index, event in df.iterrows():
+    
+    
+        # MASS comparison
+        # compute m_t  = sqrt[(p_w+p_b)^2 - (E_w+E_b)^2], here p is 3-momentum
+        df_computed.loc[index, 'mass'] = np.sqrt((event['target_W_'+type+'_E']  + event['target_b_'+type+'_E'])**2 \
+            - (event['target_W_'+type+'_Px'] + event['target_b_'+type+'_Px'])**2 \
+            - (event['target_W_'+type+'_Py'] + event['target_b_'+type+'_Py'])**2 \
+            - (event['target_W_'+type+'_Pz'] + event['target_b_'+type+'_Pz'])**2 )
 
-    mass_actual[index] = event['target_t_lep_M']
-    mass_diff[index] = mass_actual[index] - mass_compute[index]
+        # record the actual mass
+        df_actual.loc[index, 'mass'] = event['target_t_'+type+'_M']
 
-    if(abs(mass_diff[index]) > 20.):
-        df_outliers = df_outliers.append(event)
-
-print(df_outliers)
-
-plt.figure(1)
-plt.hist(mass_compute, alpha=0.5, label = 'Computed mass')
-plt.hist(mass_actual, alpha=0.5, label = 'Target mass')
-plt.yticks(np.arange(0, 150, 10))
-plt.xticks(np.arange(80, 200, 10))
-plt.legend()
-plt.savefig('Mass.pdf', dpi = 300)
-plt.show()
-plt.close()
-
-plt.figure(2)
-plt.hist(mass_diff, bins=range(-10, 90, 10), label = 'Mass difference')
-plt.legend()
-plt.savefig('Mass_diff.pdf', dpi = 300)
-plt.show()
-plt.close()
-
-
-# if __name__=='__main__':
-#   p_verify(input_filename=sys.argv[1])
+        # Record the mass difference
+        mass_diff[index] = df_actual.loc[index, 'mass'] - df_computed.loc[index, 'mass']
+    
+        # if the different too much, add the event to the outlier list
+        if(abs(mass_diff[index]) > 20.):
+            df_outliers = df_outliers.append(event)
+    
+        # Phi comparison
+        # Phi =arctan(P_y/P_x)
+        df_computed.loc[index, 'phi'] = np.arctan(event['target_b_'+type+'_Py']/event['target_b_'+type+'_Px'])
+        df_actual.loc[index, 'phi'] = event['target_b_'+type+'_Phi']
+    
+        # Eta comparison
+        # Eta = - ln(tan (theta/2)) = -0.5*ln[(|p|+P_z)/(|p|-Pz)]
+        p_norm = np.sqrt(event['target_b_'+type+'_Px']**2 + event['target_b_'+type+'_Py']**2 + event['target_b_'+type+'_Pz']**2)
+        df_computed.loc[index, 'eta']= 0.5 * np.log((p_norm+ event['target_b_'+type+'_Pz'])/(p_norm-event['target_b_'+type+'_Pz']))
+        df_actual.loc[index, 'eta'] = event['target_b_'+type+'_Eta']
+    
+        # Pt comparison
+        # Pt = sqrt(px^2 + py^2)
+        df_computed.loc[index, 'Pt'] = np.sqrt(event['target_b_'+type+'_Px']**2 + event['target_b_'+type+'_Py']**2)
+        df_actual.loc[index, 'Pt'] = event['target_b_'+type+'_Pt']
+    
+    
+    plt.figure()
+    plt.hist(df_computed['mass'], alpha=0.5, label = 'Computed mass')
+    plt.hist(df_actual['mass'], alpha=0.5, label = 'Target mass')
+    plt.yticks(np.arange(0, 150, 10))
+    plt.xticks(np.arange(80, 200, 10))
+    plt.legend()
+    plt.savefig('Mass_'+type+'.pdf', dpi = 300)
+    plt.show()
+    plt.close()
+    
+    # plt.figure()
+    # plt.hist(mass_diff, bins=np.arange(-10, 90, 10), label = 'Mass difference')
+    # plt.legend()
+    # plt.savefig('Mass_diff_leptonic.pdf', dpi = 300)
+    # plt.show()
+    # plt.close()
+    
+    plt.figure()
+    plt.hist(df_computed['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Computed phi')
+    plt.hist(df_actual['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Target phi')
+    plt.legend()
+    plt.savefig('Phi_'+type+'.pdf', dpi = 300)
+    plt.show()
+    plt.close()
+    
+    plt.figure()
+    plt.hist(df_computed['eta'], alpha=0.5, label = 'Computed eta')
+    plt.hist(df_actual['eta'], alpha=0.5, label = 'Target eta')
+    plt.legend()
+    plt.savefig('Eta_'+type+'.pdf', dpi = 300)
+    plt.show()
+    plt.close()
+    
+    plt.figure()
+    plt.hist(df_computed['Pt'], alpha=0.5, label = 'Computed Pt')
+    plt.hist(df_actual['Pt'], alpha=0.5, label = 'Target Pt')
+    plt.legend()
+    plt.savefig('Pt_'+type+'.pdf', dpi = 300)
+    plt.show()
+    plt.close()
