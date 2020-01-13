@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, sys
 import csv
-
+import signal
 import ROOT
 from ROOT import TLorentzVector, gROOT, TChain, TVector2
 from tree_traversal import GetIndices
@@ -9,10 +9,30 @@ from helper_functions import *
 import numpy as np
 import traceback
 from data_augmentation import *
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
+import pandas as pd
 
 gROOT.SetBatch(True)
 
 from AngryTops.features import *
+
+def signal_handler(signal, frame):
+    
+    print('You pressed Ctrl+C!')
+
+    plt.figure()
+    plt.hist(df_computed['mass'], alpha=0.5, label = 'Computed mass')
+    plt.hist(df_actual['mass'], alpha=0.5, label = 'Target mass')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('Mass_t_had.pdf', dpi = 300)
+    plt.show()
+    plt.close()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 ###############################
 # CONSTANTS
@@ -66,6 +86,10 @@ print("INFO: using data augmentation: rotateZ %ix" % n_data_aug)
 
 # Number of events which are actually copied over
 n_good = 0
+
+actual_data_points = ['mass', 'phi', 'eta', 'Pt', 'E']
+df_actual = pd.DataFrame(columns = actual_data_points)
+df_computed = pd.DataFrame(columns = actual_data_points)
 
 # Looping through the reconstructed entries
 for ientry in range(n_entries):
@@ -166,6 +190,8 @@ for ientry in range(n_entries):
                         tree.GetLeaf("Particle.Mass").GetValue(indices['t_had'])
                         )
 
+    df_actual = df_actual.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['t_had']),'phi':0.,'eta':0.,'Pt':0, 'E':0.},ignore_index=True)
+
     W_had.SetPtEtaPhiM( tree.GetLeaf("Particle.PT").GetValue(indices['W_had']),
                         tree.GetLeaf("Particle.Eta").GetValue(indices['W_had']),
                         tree.GetLeaf("Particle.Phi").GetValue(indices['W_had']),
@@ -191,6 +217,19 @@ for ientry in range(n_entries):
                         tree.GetLeaf("Particle.Eta").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Phi").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Mass").GetValue(indices['b_lep']))
+
+    W_E = tree.GetLeaf("Particle.E").GetValue(indices['W_had'])
+    b_E = tree.GetLeaf("Particle.E").GetValue(indices['b_had'])
+    b_px = tree.GetLeaf("Particle.Px").GetValue(indices['b_had'])
+    b_py = tree.GetLeaf("Particle.Py").GetValue(indices['b_had'])
+    b_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])
+    W_px = tree.GetLeaf("Particle.Px").GetValue(indices['W_had'])
+    W_py = tree.GetLeaf("Particle.Py").GetValue(indices['W_had'])
+    W_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])
+
+    df_computed = df_computed.append({'mass':
+                    np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 ),\
+                                         'eta':t_had.Eta(), 'Pt':t_had.Pt(), 'E':t_had.E()},ignore_index=True)
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
@@ -268,6 +307,7 @@ for ientry in range(n_entries):
 
         sjets0, target_W_had, target_b_had, target_t_had, target_W_lep, target_b_lep, target_t_lep = MakeInput(jets, W_had, b_had, t_had, W_lep, b_lep, t_lep )
         sjets1, _, _, _, _, _, _ = MakeInput(jets, W_had, b_had, t_had, W_lep, b_lep, t_lep )
+
 
     # write out
         csvwriter.writerow( (

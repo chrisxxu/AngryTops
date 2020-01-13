@@ -54,7 +54,8 @@ column_names = ["runNumber", "eventNumber", "weight", "jets_n", "bjets_n",
 
 # def p_verify(input_filename, **kwargs):
 
-input_filename = 'test.csv'
+input_filename = 'test_jan6.csv'
+plots_dir_name = 'plots_for_test_jan6/'
 
 # Cartesian; eg. we dont use p_psi here
 rep = 'pxpypzEM'
@@ -143,7 +144,7 @@ for type in ['lep', 'had']:
         df_actual_b.loc[index, 'Pt'] = event['target_b_'+type+'_Pt']
         df_actual_w.loc[index, 'Pt'] = event['target_W_'+type+'_Pt']
 
-        # Energy check
+        # Energy comparison
         # Simple energy conservation: E_t = E_W + E_b
         # Borrowing df for b
         df_computed_b.loc[index, 'E'] = event['target_W_'+type+'_E'] + event['target_b_'+type+'_E']
@@ -155,7 +156,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_b['E'], alpha=0.5, bins=np.arange(0,3000, 200), label = 'Computed E')
     plt.hist(df_actual_b['E'], alpha=0.5, bins=np.arange(0,3000, 200), label = 'Target E')
     plt.legend()
-    plt.savefig('E.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'E.pdf', dpi = 300)
     plt.show()
     plt.close()
 
@@ -165,7 +166,7 @@ for type in ['lep', 'had']:
     plt.yticks(np.arange(0, 150, 10))
     plt.xticks(np.arange(80, 200, 10))
     plt.legend()
-    plt.savefig('Mass_'+type+'_b.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Mass_'+type+'_b.pdf', dpi = 300)
     plt.show()
     plt.close()
 
@@ -175,14 +176,14 @@ for type in ['lep', 'had']:
     plt.yticks(np.arange(0, 150, 10))
     plt.xticks(np.arange(80, 200, 10))
     plt.legend()
-    plt.savefig('Mass_'+type+'_W.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Mass_'+type+'_W.pdf', dpi = 300)
     plt.show()
     plt.close()
     
     # plt.figure()
     # plt.hist(mass_diff, bins=np.arange(-10, 90, 10), label = 'Mass difference')
     # plt.legend()
-    # plt.savefig('Mass_diff_leptonic.pdf', dpi = 300)
+    # plt.savefig(plots_dir_name+'Mass_diff_leptonic.pdf', dpi = 300)
     # plt.show()
     # plt.close()
     
@@ -190,7 +191,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_b['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Computed phi')
     plt.hist(df_actual_b['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Target phi')
     plt.legend()
-    plt.savefig('Phi_'+type+'_b.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Phi_'+type+'_b.pdf', dpi = 300)
     plt.show()
     plt.close()
 
@@ -198,7 +199,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_w['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Computed phi')
     plt.hist(df_actual_w['phi'], alpha=0.5, bins=np.arange(-4, 4.5, 0.5), label = 'Target phi')
     plt.legend()
-    plt.savefig('Phi_'+type+'_W.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Phi_'+type+'_W.pdf', dpi = 300)
     plt.show()
     plt.close()
     
@@ -206,7 +207,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_b['eta'], alpha=0.5, label = 'Computed eta')
     plt.hist(df_actual_b['eta'], alpha=0.5, label = 'Target eta')
     plt.legend()
-    plt.savefig('Eta_'+type+'_b.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Eta_'+type+'_b.pdf', dpi = 300)
     plt.show()
     plt.close()
 
@@ -214,7 +215,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_w['eta'], alpha=0.5, label = 'Computed eta')
     plt.hist(df_actual_w['eta'], alpha=0.5, label = 'Target eta')
     plt.legend()
-    plt.savefig('Eta_'+type+'_w.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Eta_'+type+'_w.pdf', dpi = 300)
     plt.show()
     plt.close()
     
@@ -222,7 +223,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_b['Pt'], alpha=0.5, label = 'Computed Pt')
     plt.hist(df_actual_b['Pt'], alpha=0.5, label = 'Target Pt')
     plt.legend()
-    plt.savefig('Pt_'+type+'_b.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Pt_'+type+'_b.pdf', dpi = 300)
     plt.show()
     plt.close()
     
@@ -230,7 +231,7 @@ for type in ['lep', 'had']:
     plt.hist(df_computed_w['Pt'], alpha=0.5, label = 'Computed Pt')
     plt.hist(df_actual_w['Pt'], alpha=0.5, label = 'Target Pt')
     plt.legend()
-    plt.savefig('Pt_'+type+'_W.pdf', dpi = 300)
+    plt.savefig(plots_dir_name+'Pt_'+type+'_W.pdf', dpi = 300)
     plt.show()
     plt.close()
 
