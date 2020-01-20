@@ -102,7 +102,6 @@ for type in ['lep', 'had']:
             - (event['target_t_'+type+'_Py'] - event['target_b_'+type+'_Py'])**2 \
             - (event['target_t_'+type+'_Pz'] - event['target_b_'+type+'_Pz'])**2 )
 
-
         # record the actual mass
         df_actual_b.loc[index, 'mass'] = event['target_t_'+type+'_M']
         df_actual_w.loc[index, 'mass'] = event['target_W_'+type+'_M']
