@@ -23,33 +23,45 @@ from AngryTops.features import *
 dir_plots = 'plots_Jan19/'
 
 
-def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=None, weight2=None,title2=None, histname = 'img'):
+def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series([]), weight2=pd.Series([]),title2=pd.Series([]), histname = 'img'):
 
     hist1 = ROOT.TH1F(title1, "[GeV]", int(bin_number), y_min, y_max)
 
     # doing this prevents memory leak apperantly 
     hist1.SetDirectory(0)
-    hist2 = ROOT.TH1F(title2, "[GeV]", int(bin_number), y_min, y_max)
-    hist2.SetDirectory(0)
 
+    # Add points to the hist
     for index in np.arange(len(y1)):
-            hist1.Fill(y1[index],weight1[index])
-
-    for index in np.arange(len(y2)):
-            hist2.Fill(y2[index],weight2[index])
+            hist1.Fill(y1[index])
 
     # FORMAT HISTOGRAMS
-    for h in [hist1, hist2]:
-        xtitle = h.GetXaxis().GetTitle()
-        ytitle = h.GetYaxis().GetTitle()
-    # h.Sumw2()
-    # h.SetMarkerColor(ROOT.kRed)
-    # h.SetLineColor(ROOT.kRed)
-    # h.SetMarkerStyle(24)
-    # Normalize(hist)
+    xtitle = hist1.GetXaxis().GetTitle()
+    ytitle = hist1.GetYaxis().GetTitle()
+    # hist1.Sumw2(0)
+    hist1.SetMarkerColor(ROOT.kRed)
+    hist1.SetLineColor(ROOT.kRed)
+    hist1.SetMarkerStyle(24)
+    plot_help.Normalize(hist1)
 
+    if y2.empty == False:
+        hist2 = ROOT.TH1F(title2, "[GeV]", int(bin_number), y_min, y_max)
+        for index in np.arange(len(y2)):
+            hist2.Fill(y2[index],weight2[index])
+            hist2.SetDirectory(0)
+        
+        xtitle = hist2.GetXaxis().GetTitle()
+        ytitle = hist2.GetYaxis().GetTitle()
+        # hist2.Sumw2()
+        hist2.SetMarkerColor(ROOT.kRed)
+        hist2.SetLineColor(ROOT.kRed)
+        hist2.SetMarkerStyle(24)
+        plot_help.Normalize(hist2)
+
+    # set the style
     plot_help.SetTH1FStyle(hist1, color=ROOT.kGray+2, fillstyle=1001, fillcolor=ROOT.kGray, linewidth=3, markersize=0 )
-    plot_help.SetTH1FStyle(hist2, color=ROOT.kBlack, markersize=0, markerstyle=20, linewidth=3 )
+
+    if y2.empty == False:
+        plot_help.SetTH1FStyle(hist2, color=ROOT.kBlack, markersize=0, markerstyle=20, linewidth=3 )
 
     # DRAW HISTOGRAMS
     c, pad0, pad1 = plot_help.MakeCanvas()
@@ -57,12 +69,19 @@ def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=None, wei
     ROOT.gStyle.SetOptTitle(0)
 
     hist1.Draw("h")
-    hist2.Draw("h same")
-    # hmax = 1.5 * max([h_true.GetMaximum(), h_fitted.GetMaximum()])
-    hist1.SetMaximum(1.5 * hist1.GetMaximum())
-    hist1.SetMaximum(1.5 * hist2.GetMaximum())
-    # h_fitted.SetMinimum(0.)
-    # h_true.SetMinimum(0.)
+    data_max = hist1.GetMaximum()
+    data_min = hist1.GetMinimum()
+    hist1.SetMaximum(1.5 * data_max)
+    hist1.SetMinimum(0.5 * data_min)
+
+    if y2.empty == False:
+        hist2.Draw("h same")
+        data_max = np.maximum(hist1.GetMaximum(),hist2.GetMaximum())
+        data_min = np.minimum(hist1.GetMinimum(),hist2.GetMinimum())
+        hist1.SetMaximum(1.5 * data_max)
+        hist2.SetMaximum(1.5 * data_max)
+        hist1.SetMinimum(0.5 * data_min)
+        hist2.SetMinimum(0.5 * data_min)
 
     # Legend
     leg = ROOT.TLegend( 0.20, 0.80, 0.50, 0.90 )
@@ -72,16 +91,22 @@ def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=None, wei
     leg.SetTextFont(42)
     leg.SetTextSize(0.05)
     leg.AddEntry( hist1, title1, "f" )
-    leg.AddEntry( hist2, title2, "f" )
+    if y2.empty == False:
+        leg.AddEntry( hist2, title2, "f" )
     leg.SetY1( leg.GetY1() - 0.05 * leg.GetNRows() )
     leg.Draw()
 
- # SAVE AND CLOSE HISTOGRAM
+    # SAVE AND CLOSE HISTOGRAM
     ROOT.gPad.RedrawAxis()
     pad1.cd()
+
+
     yrange = [0.4, 1.6]
-    frame, tot_unc, ratio = plot_help.DrawRatio(hist1, hist2, xtitle, yrange)
-    ROOT.gPad.RedrawAxis()
+    if y2.empty == False:
+        frame, tot_unc, ratio = plot_help.DrawRatio(hist1, hist2, xtitle, yrange)
+    else:
+        frame, tot_unc, ratio = plot_help.DrawRatio(hist1, hist1, xtitle, yrange)
+
     c.cd()
     c.SaveAs("{}/{}.png".format(dir_plots,histname))
     pad0.Close()
@@ -96,77 +121,46 @@ def signal_handler(signal, frame):
 
     print('You pressed Ctrl+C!')
 
-    make_root_2hists(df_computed_t_had['mass'],df_computed_t_had['weight'], 20, 0.,300. ,'t mass computed',\
-                   df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual', 't_mass')
+    make_root_2hists(df_computed_t_had['mass'],df_computed_t_had['weight'], 50, 50., 200.,'t mass computed had',\
+                   df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual had', 't_mass_had')
 
-    # plt.figure(df_computed_t_had['mass'])
-    # plt.hist(df_computed_t_had['mass'], alpha=0.5, label = 't had Computed mass')
-    # plt.hist(df_actual_t_had['mass'], alpha=0.5, label = 't had Target mass')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'Mass_t_had.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
+    make_root_2hists(df_computed_t_lep['mass'],df_computed_t_lep['weight'], 50, 50., 200.,'t mass computed lep',\
+                   df_actual_t_lep['mass'],df_actual_t_lep['weight'],'t mass actual lep', 't_mass_lep')
     
-    # plt.figure()
-    # plt.hist(df_computed_t_lep['mass'], alpha=0.5, label = 't lep Computed mass')
-    # plt.hist(df_actual_t_had_lep['mass'], alpha=0.5, label = 't lep Target mass')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'Mass_t_lep.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
-    
-    # plt.figure()
-    # plt.hist(df_actual_b_lep['mass'], alpha=0.5, label = 'b lep Target mass')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'Mass_b_lep.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
-    
-    # plt.figure()
-    # plt.hist(df_actual_W_lep['mass'], alpha=0.5, label = 'W lep Target mass')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'Mass_W_lep.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
-    
-    # plt.figure()
-    # plt.hist(df_actual_b_lep['E'], alpha=0.5, bins=np.arange(0,500,50),label = 'b lep Target E')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'E_b_lep.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
-    
-    # plt.figure()
-    # plt.hist(df_actual_t_had_lep['E'], alpha=0.5, bins=np.arange(0,500,50),label = 'w lep Target E')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'E_W_lep.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
+    make_root_2hists(df_actual_b_lep['mass'],df_actual_b_lep['weight'], 50, 4.5, 5.5 ,'b mass computed lep', histname ='b_mass_lep')
+    make_root_2hists(df_actual_W_lep['mass'],df_actual_W_lep['weight'], 50, 60., 100. ,'W mass actual lep', histname ='w_mass_lep')
+    make_root_2hists(df_actual_b_lep['E'],df_actual_b_lep['weight'], 50, 0., 500. ,'b E actual lep', histname ='b_E_lep')
+    make_root_2hists(df_actual_t_lep['E'],df_actual_b_lep['weight'], 50, 0., 800. ,'t E actual lep', histname ='t_E_lep')
+    make_root_2hists(df_actual_W_lep['E'],df_actual_W_lep['weight'], 50, 0., 500. ,'t E actual lep', histname ='w_E_lep')
+    make_root_2hists(df_actual_b_lep['Pt'],df_actual_b_lep['weight'], 50, 0., 500. ,'b pt actual lep', histname ='b_pt_lep')
+    make_root_2hists(df_actual_t_lep['Pt'],df_actual_b_lep['weight'], 50, 0., 500. ,'t pt actual lep', histname ='t_pt_lep')
+    make_root_2hists(df_actual_W_lep['Pt'],df_actual_W_lep['weight'], 50, 0., 500. ,'t pt actual lep', histname ='w_pt_lep')
 
-    # plt.figure()
-    # plt.hist(momenta_3_diff[:,0], alpha=0.5, bins=np.arange(-10,10,50),label = '3-momenta t x diff')
-    # plt.hist(momenta_3_diff[:,1], alpha=0.5, bins=np.arange(-10,10,50),label = '3-momenta t y diff')
-    # plt.hist(momenta_3_diff[:,2], alpha=0.5, bins=np.arange(-10,10,50),label = '3-momenta t z diff')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'t_3_momenta_diff.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
+    # momenta_3 [[p_t_x,p_t_y,p_t_z],[p_w_x,p_w_y,p_w_z],[p_b_x,p_b_y,p_b_z]]
+    number_of_entry = np.shape(momenta_3)[0]
+    make_root_2hists(momenta_3[:,0,0]-momenta_3[:,1,0]-momenta_3[:,2,0],\
+        number_of_entry, 50, -2., 2. ,'px diff(p_t-p_w-p_b)', histname ='px_diff')
+    make_root_2hists(momenta_3[:,0,1]-momenta_3[:,1,1]-momenta_3[:,2,1],\
+        number_of_entry, 50, -2., 2. ,'py diff(p_t-p_w-p_b)', histname ='py_diff')
+    make_root_2hists(momenta_3[:,0,2]-momenta_3[:,1,2]-momenta_3[:,2,2],\
+        number_of_entry, 50, -2., 2. ,'pz diff(p_t-p_w-p_b)', histname ='pz_diff')
 
-    # plt.figure()
-    # plt.hist(t_pt_diff, alpha=0.5, bins=np.arange(-50,50,20),label = 'pt diff')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.savefig(dir_plots+'pt_t_diff.pdf', dpi = 300)
-    # plt.show()
-    # plt.close()
+    make_root_2hists(t_pt_diff,np.ones(len(t_pt_diff)), 50, -2., 2. ,'pt diff', histname ='pt_diff')
 
+    print('t px mean ={}'.format(np.mean(momenta_3[:,0,0])))
+    print('t py mean ={}'.format(np.mean(momenta_3[:,0,1])))
+    print('t pz mean ={}'.format(np.mean(momenta_3[:,0,2])))
+    print('w px mean ={}'.format(np.mean(momenta_3[:,1,0])))
+    print('w py mean ={}'.format(np.mean(momenta_3[:,1,1])))
+    print('w pz mean ={}'.format(np.mean(momenta_3[:,1,2])))
+    print('b px mean ={}'.format(np.mean(momenta_3[:,2,0])))
+    print('b py mean ={}'.format(np.mean(momenta_3[:,2,1])))
+    print('b pz mean ={}'.format(np.mean(momenta_3[:,2,2])))
+
+    # First 500 events to keep the files small
+    np.savetxt(dir_plots+'p_t.txt', momenta_3[0:5000,0,:])
+    np.savetxt(dir_plots+'p_w.txt', momenta_3[0:5000,1,:])
+    np.savetxt(dir_plots+'p_b.txt', momenta_3[0:5000,2,:])
 
     sys.exit(0)
 
@@ -230,14 +224,14 @@ actual_data_points = ['mass', 'phi', 'eta', 'Pt', 'E', 'weight']
 df_actual_t_had = pd.DataFrame(columns = actual_data_points)
 df_computed_t_had = pd.DataFrame(columns = actual_data_points)
 
-df_actual_t_had_lep = pd.DataFrame(columns = actual_data_points)
+df_actual_t_lep = pd.DataFrame(columns = actual_data_points)
 df_computed_t_lep = pd.DataFrame(columns = actual_data_points)
 
 df_actual_b_lep = pd.DataFrame(columns = actual_data_points)
 df_actual_W_lep = pd.DataFrame(columns = actual_data_points)
 
 t_pt_diff = np.ones(n_entries)
-momenta_3_diff = np.ones(shape=(n_entries,3))
+momenta_3 = np.ones(shape=(n_entries,3,3))
 
 # Looping through the reconstructed entries
 for ientry in range(n_entries):
@@ -371,7 +365,7 @@ for ientry in range(n_entries):
                                    'E': tree.GetLeaf("Particle.E").GetValue(indices['t_had']),\
                                    'weight':weight},ignore_index=True)
 
-    df_actual_t_had_lep =df_actual_t_had_lep.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['t_lep']),\
+    df_actual_t_lep =df_actual_t_lep.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['t_lep']),\
                                   'phi':tree.GetLeaf("Particle.Phi").GetValue(indices['t_lep']),\
                                   'eta':tree.GetLeaf("Particle.Eta").GetValue(indices['t_lep']),\
                                   'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['t_lep']),\
@@ -391,6 +385,7 @@ for ientry in range(n_entries):
                                   'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['W_lep']),\
                                    'E': tree.GetLeaf("Particle.E").GetValue(indices['W_lep']),\
                                    'weight':weight},ignore_index=True)
+
 
     W_E = tree.GetLeaf("Particle.E").GetValue(indices['W_had'])
     b_E = tree.GetLeaf("Particle.E").GetValue(indices['b_had'])
@@ -421,15 +416,20 @@ for ientry in range(n_entries):
     t_pt_diff[ientry] = tree.GetLeaf("Particle.PT").GetValue(indices['t_had']) \
                        -tree.GetLeaf("Particle.PT").GetValue(indices['t_lep'])
 
-    momenta_3_diff[ientry] = [tree.GetLeaf("Particle.Px").GetValue(indices['t_had']) \
-                            - tree.GetLeaf("Particle.Px").GetValue(indices['b_had']) \
-                            - tree.GetLeaf("Particle.Px").GetValue(indices['W_had']),\
-                              tree.GetLeaf("Particle.Py").GetValue(indices['t_had']) \
-                            - tree.GetLeaf("Particle.Py").GetValue(indices['b_had']) \
-                            - tree.GetLeaf("Particle.Py").GetValue(indices['W_had']),\
-                              tree.GetLeaf("Particle.Pz").GetValue(indices['t_had']) \
-                            - tree.GetLeaf("Particle.Pz").GetValue(indices['b_had']) \
-                            - tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])]
+    momenta_3[ientry] = [[tree.GetLeaf("Particle.Px").GetValue(indices['t_had']),\
+                               tree.GetLeaf("Particle.Py").GetValue(indices['t_had']),\
+                               tree.GetLeaf("Particle.Pz").GetValue(indices['t_had'])],\
+                               [tree.GetLeaf("Particle.Px").GetValue(indices['W_had']),\
+                               tree.GetLeaf("Particle.Py").GetValue(indices['W_had']),\
+                               tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])],\
+                               [tree.GetLeaf("Particle.Px").GetValue(indices['b_had']),\
+                               tree.GetLeaf("Particle.Py").GetValue(indices['b_had']),\
+                               tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])]]
+
+    print(tree.GetLeaf("Particle.Px").GetValue(indices['b_had']))
+    print(b_had.Px())
+    print(momenta_3[ientry,2,0])
+    sys.exit(0)
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
