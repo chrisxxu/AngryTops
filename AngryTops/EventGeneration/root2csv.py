@@ -121,6 +121,9 @@ def signal_handler(signal, frame):
 
     print('You pressed Ctrl+C!')
 
+    momenta_3 = np.asarray(momenta_3_list)
+    t_pt_diff = np.asarray(t_pt_diff_list)
+
     make_root_2hists(df_computed_t_had['mass'],df_computed_t_had['weight'], 50, 50., 200.,'t mass computed had',\
                    df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual had', 't_mass_had')
 
@@ -139,28 +142,13 @@ def signal_handler(signal, frame):
     # momenta_3 [[p_t_x,p_t_y,p_t_z],[p_w_x,p_w_y,p_w_z],[p_b_x,p_b_y,p_b_z]]
     number_of_entry = np.shape(momenta_3)[0]
     make_root_2hists(momenta_3[:,0,0]-momenta_3[:,1,0]-momenta_3[:,2,0],\
-        number_of_entry, 50, -2., 2. ,'px diff(p_t-p_w-p_b)', histname ='px_diff')
+        number_of_entry, 50, -100., 100. ,'px diff(p_t-p_w-p_b)', histname ='px_diff')
     make_root_2hists(momenta_3[:,0,1]-momenta_3[:,1,1]-momenta_3[:,2,1],\
-        number_of_entry, 50, -2., 2. ,'py diff(p_t-p_w-p_b)', histname ='py_diff')
+        number_of_entry, 50, -100., 100. ,'py diff(p_t-p_w-p_b)', histname ='py_diff')
     make_root_2hists(momenta_3[:,0,2]-momenta_3[:,1,2]-momenta_3[:,2,2],\
-        number_of_entry, 50, -2., 2. ,'pz diff(p_t-p_w-p_b)', histname ='pz_diff')
+        number_of_entry, 50, -100., 100. ,'pz diff(p_t-p_w-p_b)', histname ='pz_diff')
 
-    make_root_2hists(t_pt_diff,np.ones(len(t_pt_diff)), 50, -2., 2. ,'pt diff', histname ='pt_diff')
-
-    print('t px mean ={}'.format(np.mean(momenta_3[:,0,0])))
-    print('t py mean ={}'.format(np.mean(momenta_3[:,0,1])))
-    print('t pz mean ={}'.format(np.mean(momenta_3[:,0,2])))
-    print('w px mean ={}'.format(np.mean(momenta_3[:,1,0])))
-    print('w py mean ={}'.format(np.mean(momenta_3[:,1,1])))
-    print('w pz mean ={}'.format(np.mean(momenta_3[:,1,2])))
-    print('b px mean ={}'.format(np.mean(momenta_3[:,2,0])))
-    print('b py mean ={}'.format(np.mean(momenta_3[:,2,1])))
-    print('b pz mean ={}'.format(np.mean(momenta_3[:,2,2])))
-
-    # First 500 events to keep the files small
-    np.savetxt(dir_plots+'p_t.txt', momenta_3[0:5000,0,:])
-    np.savetxt(dir_plots+'p_w.txt', momenta_3[0:5000,1,:])
-    np.savetxt(dir_plots+'p_b.txt', momenta_3[0:5000,2,:])
+    make_root_2hists(t_pt_diff,np.ones(len(t_pt_diff)), 50, -100., 100. ,'pt diff', histname ='pt_diff')
 
     sys.exit(0)
 
@@ -230,8 +218,8 @@ df_computed_t_lep = pd.DataFrame(columns = actual_data_points)
 df_actual_b_lep = pd.DataFrame(columns = actual_data_points)
 df_actual_W_lep = pd.DataFrame(columns = actual_data_points)
 
-t_pt_diff = np.ones(n_entries)
-momenta_3 = np.ones(shape=(n_entries,3,3))
+t_pt_diff_list = []
+momenta_3_list = []
 
 # Looping through the reconstructed entries
 for ientry in range(n_entries):
@@ -413,10 +401,10 @@ for ientry in range(n_entries):
                     np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 ),\
                                          'eta':0, 'Pt':0, 'E':0, 'weight':weight},ignore_index=True)
 
-    t_pt_diff[ientry] = tree.GetLeaf("Particle.PT").GetValue(indices['t_had']) \
-                       -tree.GetLeaf("Particle.PT").GetValue(indices['t_lep'])
+    t_pt_diff_list.append( tree.GetLeaf("Particle.PT").GetValue(indices['t_had']) \
+                       -tree.GetLeaf("Particle.PT").GetValue(indices['t_lep']))
 
-    momenta_3[ientry] = [[tree.GetLeaf("Particle.Px").GetValue(indices['t_had']),\
+    momenta_3_list.append([[tree.GetLeaf("Particle.Px").GetValue(indices['t_had']),\
                                tree.GetLeaf("Particle.Py").GetValue(indices['t_had']),\
                                tree.GetLeaf("Particle.Pz").GetValue(indices['t_had'])],\
                                [tree.GetLeaf("Particle.Px").GetValue(indices['W_had']),\
@@ -424,12 +412,7 @@ for ientry in range(n_entries):
                                tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])],\
                                [tree.GetLeaf("Particle.Px").GetValue(indices['b_had']),\
                                tree.GetLeaf("Particle.Py").GetValue(indices['b_had']),\
-                               tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])]]
-
-    print(tree.GetLeaf("Particle.Px").GetValue(indices['b_had']))
-    print(b_had.Px())
-    print(momenta_3[ientry,2,0])
-    sys.exit(0)
+                               tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])]])
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
