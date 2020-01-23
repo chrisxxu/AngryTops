@@ -20,7 +20,7 @@ gROOT.SetBatch(True)
 
 from AngryTops.features import *
 
-dir_plots = 'plots_Jan19/'
+dir_plots = 'plots_Jan21/'
 
 
 def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series([]), weight2=pd.Series([]),title2=pd.Series([]), histname = 'img'):
@@ -133,11 +133,12 @@ def signal_handler(signal, frame):
     make_root_2hists(df_actual_b_lep['mass'],df_actual_b_lep['weight'], 50, 4.5, 5.5 ,'b mass computed lep', histname ='b_mass_lep')
     make_root_2hists(df_actual_W_lep['mass'],df_actual_W_lep['weight'], 50, 60., 100. ,'W mass actual lep', histname ='w_mass_lep')
     make_root_2hists(df_actual_b_lep['E'],df_actual_b_lep['weight'], 50, 0., 500. ,'b E actual lep', histname ='b_E_lep')
-    make_root_2hists(df_actual_t_lep['E'],df_actual_b_lep['weight'], 50, 0., 800. ,'t E actual lep', histname ='t_E_lep')
-    make_root_2hists(df_actual_W_lep['E'],df_actual_W_lep['weight'], 50, 0., 500. ,'t E actual lep', histname ='w_E_lep')
+    make_root_2hists(df_actual_t_lep['E'],df_actual_t_lep['weight'], 50, 0., 800. ,'t E actual lep', histname ='t_E_lep')
+    make_root_2hists(df_actual_W_lep['E'],df_actual_W_lep['weight'], 50, 0., 500. ,'w E actual lep', histname ='w_E_lep')
     make_root_2hists(df_actual_b_lep['Pt'],df_actual_b_lep['weight'], 50, 0., 500. ,'b pt actual lep', histname ='b_pt_lep')
-    make_root_2hists(df_actual_t_lep['Pt'],df_actual_b_lep['weight'], 50, 0., 500. ,'t pt actual lep', histname ='t_pt_lep')
-    make_root_2hists(df_actual_W_lep['Pt'],df_actual_W_lep['weight'], 50, 0., 500. ,'t pt actual lep', histname ='w_pt_lep')
+    make_root_2hists(df_actual_t_lep['Pt'],df_actual_t_lep['weight'], 50, 0., 500. ,'t pt actual lep', \
+                    df_actual_t_had['Pt'],df_actual_t_had['weight'], 't pt actual had',histname ='t_pt')
+    make_root_2hists(df_actual_W_lep['Pt'],df_actual_W_lep['weight'], 50, 0., 500. ,'w pt actual lep', histname ='w_pt_lep')
 
     # momenta_3 [[p_t_x,p_t_y,p_t_z],[p_w_x,p_w_y,p_w_z],[p_b_x,p_b_y,p_b_z]]
     number_of_entry = np.shape(momenta_3)[0]
@@ -150,6 +151,12 @@ def signal_handler(signal, frame):
 
     make_root_2hists(t_pt_diff,np.ones(len(t_pt_diff)), 50, -100., 100. ,'pt diff', histname ='pt_diff')
 
+    # name 4-momentum 
+    # Converting to np array to change dtype
+    np.savetxt(dir_plots + 'outliers_had.txt',np.array(outliers_had, dtype = object), \
+        header = 'E(t) Px(t) Py(t) Pz(t) E(b) Px(b) Py(b) Pz(b) E(w) Px(w) Py(w) Pz(w) Computed_Mass_t Actual_Mass_t',\
+         fmt=' '.join(['%1.3f']*np.shape(outliers_had)[1]),delimiter=',')
+    
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -218,6 +225,7 @@ df_computed_t_lep = pd.DataFrame(columns = actual_data_points)
 df_actual_b_lep = pd.DataFrame(columns = actual_data_points)
 df_actual_W_lep = pd.DataFrame(columns = actual_data_points)
 
+outliers_had = []
 t_pt_diff_list = []
 momenta_3_list = []
 
@@ -384,9 +392,15 @@ for ientry in range(n_entries):
     W_py = tree.GetLeaf("Particle.Py").GetValue(indices['W_had'])
     W_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])
 
-    df_computed_t_had = df_computed_t_had.append({'mass':\
-                    np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 ),\
+    m_computed = np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 )
+
+    df_computed_t_had = df_computed_t_had.append({'mass':m_computed,\
                                          'phi':0,'eta':0, 'Pt':0 ,'E':0, 'weight':weight},ignore_index=True)
+    if m_computed < 100:
+        outliers_had.append([ t_had.E(), t_had.Px(), t_had.Py(), t_had.Pz(),\
+                         b_had.E(), b_had.Px(), b_had.Py(), b_had.Pz(),\
+                        W_had.E(), W_had.Px(), W_had.Py(), W_had.Pz(),\
+                        m_computed, tree.GetLeaf("Particle.Mass").GetValue(indices['t_had'])])        
 
     W_E = tree.GetLeaf("Particle.E").GetValue(indices['W_lep'])
     b_E = tree.GetLeaf("Particle.E").GetValue(indices['b_lep'])
@@ -413,6 +427,7 @@ for ientry in range(n_entries):
                                [tree.GetLeaf("Particle.Px").GetValue(indices['b_had']),\
                                tree.GetLeaf("Particle.Py").GetValue(indices['b_had']),\
                                tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])]])
+
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
