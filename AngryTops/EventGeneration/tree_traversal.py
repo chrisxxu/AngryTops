@@ -3,6 +3,7 @@ import ROOT
 from ROOT import TLorentzVector
 from array import array
 import numpy as np
+import sys
 
 def TraverseSelfDecay(tree, entry, index):
     """Returns the index for the last self decay of the particle
@@ -14,19 +15,29 @@ def TraverseSelfDecay(tree, entry, index):
     @ Return
     The leaf index referring to the final stage of self
     """
+    # Top quark will never come here
     tree.GetEntry(entry)
     pids = tree.GetLeaf("Particle.PID")
     d1 = tree.GetLeaf("Particle.D1")
+    d2 = tree.GetLeaf("Particle.D2")
     pid = pids.GetValue(index)
+
     new_index = int(index)
     # Loop through children
     flag = True
     while flag:
         id = pids.GetValue(int(d1.GetValue(new_index)))
-        if id == pid:
+        if id == pid and d1.GetValue(new_index)==d2.GetValue(new_index):
             new_index = int(d1.GetValue(new_index))
         else:
             flag = False
+
+        if entry == 262:
+            print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(new_index,d1.GetValue(new_index),\
+                d2.GetValue(index),tree.GetLeaf("Particle.PID").GetValue(new_index)))
+            d2_pter = int(d2.GetValue(index))
+            print('D2 :         index = {}; d1 = {}; d2 = {}; pid = {}'.format(d2_pter,d1.GetValue(d2_pter),\
+                        d2.GetValue(d2_pter),tree.GetLeaf("Particle.PID").GetValue(d2_pter)))
     return new_index
 
 
@@ -46,11 +57,14 @@ def GetParticleIndex(tree, entry, pid):
     The leaf index referring to the desired particle, or -1 if the PID is not
     in the event
     """
+    # Only t or tbar gets here
     tree.GetEntry(entry)
     pids = tree.GetLeaf("Particle.PID")
     d1 = tree.GetLeaf("Particle.D1")
+    ## -1 is the flag for havent found before, but -1 is also dbar
     index = -1
     # Loop through pids, update index
+    ## Go through pids
     for i in range(pids.GetLen()):
         value = pids.GetValue(i)
         if value == pid:
@@ -75,10 +89,13 @@ def ClassifyTopQuark(tree, entry, t_indices):
     [t_hadronic, W_hadronic, b_hadronic, t_leptonic, W_leptonic, b_leptonic]
     """
     indices = {}
+    ## Set to the event
     tree.GetEntry(entry)
     pids = tree.GetLeaf("Particle.PID")
     d1 = tree.GetLeaf("Particle.D1")
     d2 = tree.GetLeaf("Particle.D2")
+    # for l in tree.GetListOfLeaves():
+        # print(l.GetName())
     # Check just the first index to save time
     for index in t_indices:
         # One of these will be the W quark, the other will be the b quark.
@@ -91,11 +108,19 @@ def ClassifyTopQuark(tree, entry, t_indices):
             W_index, b_index = d_index1, d_index2
         else:
             W_index, b_index = d_index2, d_index1
+
+        ## Check that the other one is indeed a b or bbar
+        if np.abs(pids.GetValue(b_index)) != 5:
+            print(np.abs(pids.GetValue(b_index)))
+            print('bugggggggggggggggggggggggggggg')
+        
         # Decay constituents of the W particle
         child1 = pids.GetValue(int(d1.GetValue(W_index)))
         child2 = pids.GetValue(int(d2.GetValue(W_index)))
         # Check for leptonic and hadronic decay of W boson
+        ## Quarks' pids are less than 10
         if np.min([np.abs(child1), np.abs(child2)]) > 10:
+            ## if t_lep is already in indices, we have come here before
             assert "t_lep" not in indices.keys(), "Two leptonic top quarks"
             indices["t_lep"] = index
             indices["W_lep"] = W_index
@@ -107,6 +132,7 @@ def ClassifyTopQuark(tree, entry, t_indices):
             indices["b_had"] = b_index
         else:
             raise Exception("Not Valid Decay for W quark")
+
     return indices
 
 def GetIndices(tree, entry):

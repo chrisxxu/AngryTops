@@ -20,7 +20,7 @@ gROOT.SetBatch(True)
 
 from AngryTops.features import *
 
-dir_plots = 'plots_Jan21/'
+dir_plots = 'plots_Jan29/'
 
 
 def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series([]), weight2=pd.Series([]),title2=pd.Series([]), histname = 'img'):
@@ -71,17 +71,19 @@ def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series
     hist1.Draw("h")
     data_max = hist1.GetMaximum()
     data_min = hist1.GetMinimum()
-    hist1.SetMaximum(1.5 * data_max)
+    hist1.SetMaximum(1.25 * data_max)
     hist1.SetMinimum(0.5 * data_min)
 
     if y2.empty == False:
         hist2.Draw("h same")
         data_max = np.maximum(hist1.GetMaximum(),hist2.GetMaximum())
         data_min = np.minimum(hist1.GetMinimum(),hist2.GetMinimum())
-        hist1.SetMaximum(1.5 * data_max)
-        hist2.SetMaximum(1.5 * data_max)
+        hist1.SetMaximum(1.25 * data_max)
+        hist2.SetMaximum(1.25 * data_max)
         hist1.SetMinimum(0.5 * data_min)
         hist2.SetMinimum(0.5 * data_min)
+        print(int(hist1.GetMaximumBin()))
+        print(int(hist2.GetMaximumBin()))
 
     # Legend
     leg = ROOT.TLegend( 0.20, 0.80, 0.50, 0.90 )
@@ -125,10 +127,10 @@ def signal_handler(signal, frame):
     t_pt_diff = np.asarray(t_pt_diff_list)
 
     make_root_2hists(df_computed_t_had['mass'],df_computed_t_had['weight'], 50, 50., 200.,'t mass computed had',\
-                   df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual had', 't_mass_had')
+                   df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual had', histname ='t_mass_had')
 
     make_root_2hists(df_computed_t_lep['mass'],df_computed_t_lep['weight'], 50, 50., 200.,'t mass computed lep',\
-                   df_actual_t_lep['mass'],df_actual_t_lep['weight'],'t mass actual lep', 't_mass_lep')
+                   df_actual_t_lep['mass'],df_actual_t_lep['weight'],'t mass actual lep', histname ='t_mass_lep')
     
     make_root_2hists(df_actual_b_lep['mass'],df_actual_b_lep['weight'], 50, 4.5, 5.5 ,'b mass computed lep', histname ='b_mass_lep')
     make_root_2hists(df_actual_W_lep['mass'],df_actual_W_lep['weight'], 50, 60., 100. ,'W mass actual lep', histname ='w_mass_lep')
@@ -153,9 +155,9 @@ def signal_handler(signal, frame):
 
     # name 4-momentum 
     # Converting to np array to change dtype
-    np.savetxt(dir_plots + 'outliers_had.txt',np.array(outliers_had, dtype = object), \
-        header = 'E(t) Px(t) Py(t) Pz(t) E(b) Px(b) Py(b) Pz(b) E(w) Px(w) Py(w) Pz(w) Computed_Mass_t Actual_Mass_t',\
-         fmt=' '.join(['%1.3f']*np.shape(outliers_had)[1]),delimiter=',')
+    # np.savetxt(dir_plots + 'outliers_had.txt',np.array(outliers_had, dtype = object), \
+    #     header = 'E(t) Px(t) Py(t) Pz(t) E(b) Px(b) Py(b) Pz(b) E(w) Px(w) Py(w) Pz(w) Computed_Mass_t Actual_Mass_t',\
+    #      fmt=' '.join(['%1.3f']*np.shape(outliers_had)[1]),delimiter=',')
     
     sys.exit(0)
 
@@ -282,6 +284,7 @@ for ientry in range(n_entries):
     # This is what will be fed into the RNN
     # Replaced the mv2c10 value with the bjet tag value, as that is what is
     # recoreded by Delphes
+    outlier_indices = []
     jets = []
     bjets = []
     for i in range(jets_n):
@@ -397,6 +400,39 @@ for ientry in range(n_entries):
     df_computed_t_had = df_computed_t_had.append({'mass':m_computed,\
                                          'phi':0,'eta':0, 'Pt':0 ,'E':0, 'weight':weight},ignore_index=True)
     if m_computed < 100:
+        print('OUTLIER FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFOUND!')
+        print("ENTRY:{}".format(ientry))
+        # print('t had:')
+        # d1 = tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])
+        # d2 = tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])
+        # print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(indices['t_had'],d1,d2,tree.GetLeaf("Particle.PID").GetValue(indices['t_had'])))
+
+        # print('D1 according to D1:')
+        # for x in np.arange(tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])-10,\
+        #                    tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])+10, dtype=int):
+        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
+        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
+        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
+
+        # print('D2 according to D2:')
+        # for x in np.arange(tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])-10,\
+        #                    tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])+10, dtype=int):
+        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
+        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
+        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
+
+        # print('W had:')
+        # for x in np.arange(indices['W_had']-10,indices['W_had']+10):
+        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
+        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
+        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
+
+        # print('b had:')
+        # for x in np.arange(indices['b_had']-10,indices['b_had']+10):
+        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
+        # #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
+        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
+
         outliers_had.append([ t_had.E(), t_had.Px(), t_had.Py(), t_had.Pz(),\
                          b_had.E(), b_had.Px(), b_had.Py(), b_had.Pz(),\
                         W_had.E(), W_had.Px(), W_had.Py(), W_had.Pz(),\
