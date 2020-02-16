@@ -20,7 +20,7 @@ gROOT.SetBatch(True)
 
 from AngryTops.features import *
 
-dir_plots = 'plots_Jan29/'
+dir_plots = 'plots_Feb6/'
 
 
 def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series([]), weight2=pd.Series([]),title2=pd.Series([]), histname = 'img'):
@@ -161,7 +161,15 @@ def signal_handler(signal, frame):
     
     sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
+# signal.signal(signal.SIGINT, signal_handler)
+
+# LOGGING
+try:
+    log = open("log.txt", 'w')
+except Exception as e:
+    os.mkdir(train_dir)
+    log = open("log.txt", 'w')
+sys.stdout = log
 
 ###############################
 # CONSTANTS
@@ -216,20 +224,6 @@ print("INFO: using data augmentation: rotateZ %ix" % n_data_aug)
 # Number of events which are actually copied over
 n_good = 0
 
-actual_data_points = ['mass', 'phi', 'eta', 'Pt', 'E', 'weight']
-
-df_actual_t_had = pd.DataFrame(columns = actual_data_points)
-df_computed_t_had = pd.DataFrame(columns = actual_data_points)
-
-df_actual_t_lep = pd.DataFrame(columns = actual_data_points)
-df_computed_t_lep = pd.DataFrame(columns = actual_data_points)
-
-df_actual_b_lep = pd.DataFrame(columns = actual_data_points)
-df_actual_W_lep = pd.DataFrame(columns = actual_data_points)
-
-outliers_had = []
-t_pt_diff_list = []
-momenta_3_list = []
 
 # Looping through the reconstructed entries
 for ientry in range(n_entries):
@@ -312,6 +306,9 @@ for ientry in range(n_entries):
     # Build output data we are trying to predict with RNN
     try:
         indices = GetIndices(tree, ientry)
+        ## None means something is wrong(outlier). ignore this case
+        if indices == None:
+            continue
     except Exception as e:
         print("Exception thrown when retrieving indices")
         print(e)
@@ -356,114 +353,6 @@ for ientry in range(n_entries):
                         tree.GetLeaf("Particle.Eta").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Phi").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Mass").GetValue(indices['b_lep']))
-
-    df_actual_t_had = df_actual_t_had.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['t_had']),\
-                                  'phi':tree.GetLeaf("Particle.Phi").GetValue(indices['t_had']),\
-                                  'eta':tree.GetLeaf("Particle.Eta").GetValue(indices['t_had']),\
-                                  'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['t_had']),\
-                                   'E': tree.GetLeaf("Particle.E").GetValue(indices['t_had']),\
-                                   'weight':weight},ignore_index=True)
-
-    df_actual_t_lep =df_actual_t_lep.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['t_lep']),\
-                                  'phi':tree.GetLeaf("Particle.Phi").GetValue(indices['t_lep']),\
-                                  'eta':tree.GetLeaf("Particle.Eta").GetValue(indices['t_lep']),\
-                                  'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['t_lep']),\
-                                   'E': tree.GetLeaf("Particle.E").GetValue(indices['t_lep']),\
-                                   'weight':weight},ignore_index=True)
-
-    df_actual_b_lep = df_actual_b_lep.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['b_lep']),\
-                                  'phi':tree.GetLeaf("Particle.Phi").GetValue(indices['b_lep']),\
-                                  'eta':tree.GetLeaf("Particle.Eta").GetValue(indices['b_lep']),\
-                                  'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['b_lep']),\
-                                   'E': tree.GetLeaf("Particle.E").GetValue(indices['b_lep']),\
-                                   'weight':weight},ignore_index=True)
-
-    df_actual_W_lep = df_actual_W_lep.append({'mass':tree.GetLeaf("Particle.Mass").GetValue(indices['W_lep']),\
-                                  'phi':tree.GetLeaf("Particle.Phi").GetValue(indices['W_lep']),\
-                                  'eta':tree.GetLeaf("Particle.Eta").GetValue(indices['W_lep']),\
-                                  'Pt': tree.GetLeaf("Particle.PT").GetValue(indices['W_lep']),\
-                                   'E': tree.GetLeaf("Particle.E").GetValue(indices['W_lep']),\
-                                   'weight':weight},ignore_index=True)
-
-
-    W_E = tree.GetLeaf("Particle.E").GetValue(indices['W_had'])
-    b_E = tree.GetLeaf("Particle.E").GetValue(indices['b_had'])
-    b_px = tree.GetLeaf("Particle.Px").GetValue(indices['b_had'])
-    b_py = tree.GetLeaf("Particle.Py").GetValue(indices['b_had'])
-    b_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])
-    W_px = tree.GetLeaf("Particle.Px").GetValue(indices['W_had'])
-    W_py = tree.GetLeaf("Particle.Py").GetValue(indices['W_had'])
-    W_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])
-
-    m_computed = np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 )
-
-    df_computed_t_had = df_computed_t_had.append({'mass':m_computed,\
-                                         'phi':0,'eta':0, 'Pt':0 ,'E':0, 'weight':weight},ignore_index=True)
-    if m_computed < 100:
-        print('OUTLIER FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFOUND!')
-        print("ENTRY:{}".format(ientry))
-        # print('t had:')
-        # d1 = tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])
-        # d2 = tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])
-        # print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(indices['t_had'],d1,d2,tree.GetLeaf("Particle.PID").GetValue(indices['t_had'])))
-
-        # print('D1 according to D1:')
-        # for x in np.arange(tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])-10,\
-        #                    tree.GetLeaf("Particle.D1").GetValue(indices['t_had'])+10, dtype=int):
-        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
-        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
-        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
-
-        # print('D2 according to D2:')
-        # for x in np.arange(tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])-10,\
-        #                    tree.GetLeaf("Particle.D2").GetValue(indices['t_had'])+10, dtype=int):
-        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
-        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
-        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
-
-        # print('W had:')
-        # for x in np.arange(indices['W_had']-10,indices['W_had']+10):
-        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
-        #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
-        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
-
-        # print('b had:')
-        # for x in np.arange(indices['b_had']-10,indices['b_had']+10):
-        #     d1 = tree.GetLeaf("Particle.D1").GetValue(x)
-        # #     d2 = tree.GetLeaf("Particle.D2").GetValue(x)
-        #     print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(x,d1,d2,tree.GetLeaf("Particle.PID").GetValue(x)))
-
-        outliers_had.append([ t_had.E(), t_had.Px(), t_had.Py(), t_had.Pz(),\
-                         b_had.E(), b_had.Px(), b_had.Py(), b_had.Pz(),\
-                        W_had.E(), W_had.Px(), W_had.Py(), W_had.Pz(),\
-                        m_computed, tree.GetLeaf("Particle.Mass").GetValue(indices['t_had'])])        
-
-    W_E = tree.GetLeaf("Particle.E").GetValue(indices['W_lep'])
-    b_E = tree.GetLeaf("Particle.E").GetValue(indices['b_lep'])
-    b_px = tree.GetLeaf("Particle.Px").GetValue(indices['b_lep'])
-    b_py = tree.GetLeaf("Particle.Py").GetValue(indices['b_lep'])
-    b_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['b_lep'])
-    W_px = tree.GetLeaf("Particle.Px").GetValue(indices['W_lep'])
-    W_py = tree.GetLeaf("Particle.Py").GetValue(indices['W_lep'])
-    W_pz = tree.GetLeaf("Particle.Pz").GetValue(indices['W_lep'])
-
-    df_computed_t_lep = df_computed_t_lep.append({'mass':\
-                    np.sqrt((W_E +b_E)**2 - (W_px+ b_px)**2  - (W_py + b_py)**2 - (W_pz + b_pz)**2 ),\
-                                         'eta':0, 'Pt':0, 'E':0, 'weight':weight},ignore_index=True)
-
-    t_pt_diff_list.append( tree.GetLeaf("Particle.PT").GetValue(indices['t_had']) \
-                       -tree.GetLeaf("Particle.PT").GetValue(indices['t_lep']))
-
-    momenta_3_list.append([[tree.GetLeaf("Particle.Px").GetValue(indices['t_had']),\
-                               tree.GetLeaf("Particle.Py").GetValue(indices['t_had']),\
-                               tree.GetLeaf("Particle.Pz").GetValue(indices['t_had'])],\
-                               [tree.GetLeaf("Particle.Px").GetValue(indices['W_had']),\
-                               tree.GetLeaf("Particle.Py").GetValue(indices['W_had']),\
-                               tree.GetLeaf("Particle.Pz").GetValue(indices['W_had'])],\
-                               [tree.GetLeaf("Particle.Px").GetValue(indices['b_had']),\
-                               tree.GetLeaf("Particle.Py").GetValue(indices['b_had']),\
-                               tree.GetLeaf("Particle.Pz").GetValue(indices['b_had'])]])
-
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
@@ -608,6 +497,20 @@ for ientry in range(n_entries):
         phi = np.random.uniform(- np.pi, np.pi)
 
 
+try:
+    outilers = get_outliers()
+    # file_buff = []
+    # for i in range(len(outliers)):
+    #     file_buff.append([tree.GetLeaf("Particle.E").GetValue(outliers[i]),\
+    #                                tree.GetLeaf("Particle.Px").GetValue(outliers[i]),\
+    #                                tree.GetLeaf("Particle.Py").GetValue(outliers[i]),\
+    #                                tree.GetLeaf("Particle.Pz").GetValue(outliers[i])]
+    np.savetxt(dir_plots + 'outliers.txt',np.array(outliers, dtype = object), \
+        header = 'E Px Py Pz',\
+        delimiter=',')
+except :
+    print('pass')
+    pass
 ##############################################################
 # Close Program
 outfile.close()
@@ -615,3 +518,5 @@ outfile.close()
 f_good = 100. * n_good / n_entries
 print("INFO: output file:", outfilename)
 print("INFO: %i entries written (%.2f %%)" % ( n_good, f_good))
+sys.stdout = sys.__stdout__
+log.close()

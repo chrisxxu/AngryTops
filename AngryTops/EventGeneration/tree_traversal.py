@@ -5,6 +5,12 @@ from array import array
 import numpy as np
 import sys
 
+## No, global variables are bad, but I dont want to change too much
+outliers = []
+
+def get_outliers():
+    return outliers
+
 def TraverseSelfDecay(tree, entry, index):
     """Returns the index for the last self decay of the particle
     @ Parameters
@@ -32,12 +38,6 @@ def TraverseSelfDecay(tree, entry, index):
         else:
             flag = False
 
-        if entry == 262:
-            print('index = {}; d1 = {}; d2 = {}; pid = {}'.format(new_index,d1.GetValue(new_index),\
-                d2.GetValue(index),tree.GetLeaf("Particle.PID").GetValue(new_index)))
-            d2_pter = int(d2.GetValue(index))
-            print('D2 :         index = {}; d1 = {}; d2 = {}; pid = {}'.format(d2_pter,d1.GetValue(d2_pter),\
-                        d2.GetValue(d2_pter),tree.GetLeaf("Particle.PID").GetValue(d2_pter)))
     return new_index
 
 
@@ -97,12 +97,16 @@ def ClassifyTopQuark(tree, entry, t_indices):
     # for l in tree.GetListOfLeaves():
         # print(l.GetName())
     # Check just the first index to save time
+    ## Outlier flag for recording the event
+    outlier_flag = False
     for index in t_indices:
         # One of these will be the W quark, the other will be the b quark.
         d_index1 = TraverseSelfDecay(tree, entry, int(d1.GetValue(index)))
         d_index2 = TraverseSelfDecay(tree, entry, int(d2.GetValue(index)))
-        assert np.abs(pids.GetValue(d_index1)) == 24 \
-                        or np.abs(pids.GetValue(d_index2)) == 24, "No W quark found in decay of top quark"
+        if np.abs(pids.GetValue(d_index1)) != 24 and np.abs(pids.GetValue(d_index2)) != 24:
+            outlier_flag = True
+            print("No W quark found in decay of top quark")
+            break
         # Find the children for the W quark
         if np.abs(pids.GetValue(d_index1)) == 24:
             W_index, b_index = d_index1, d_index2
@@ -121,17 +125,28 @@ def ClassifyTopQuark(tree, entry, t_indices):
         ## Quarks' pids are less than 10
         if np.min([np.abs(child1), np.abs(child2)]) > 10:
             ## if t_lep is already in indices, we have come here before
-            assert "t_lep" not in indices.keys(), "Two leptonic top quarks"
+            if "t_lep"  in indices.keys():
+                outlier_flag = True
+                print("Two leptonic top quarks")
+                break
             indices["t_lep"] = index
             indices["W_lep"] = W_index
             indices["b_lep"] = b_index
         elif np.max([np.abs(child1), np.abs(child2)]) < 10:
-            assert "t_had" not in indices.keys(), "Two hadronic top quarks"
+            if  "t_had"  in indices.keys():
+                outlier_flag = True
+                print("Two hadronic top quarks")
+                break
             indices["t_had"] = index
             indices["W_had"] = W_index
             indices["b_had"] = b_index
         else:
             raise Exception("Not Valid Decay for W quark")
+
+    ## if it is an outlier, return the tree too
+    if outlier_flag:
+        outliers.append(tree.GetEntry(entry))
+        indices = None
 
     return indices
 
