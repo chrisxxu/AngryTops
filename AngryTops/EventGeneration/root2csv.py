@@ -10,9 +10,6 @@ from helper_functions import *
 import numpy as np
 import traceback
 from data_augmentation import *
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 import pandas as pd
 import AngryTops.Plotting.PlottingHelper as plot_help
 
@@ -20,7 +17,7 @@ gROOT.SetBatch(True)
 
 from AngryTops.features import *
 
-dir_plots = 'plots_Feb6/'
+dir_plots = 'training_data_precuts_plots/'
 
 
 def make_root_2hists(y1, weight1, bin_number, y_min, y_max, title1, y2=pd.Series([]), weight2=pd.Series([]),title2=pd.Series([]), histname = 'img'):
@@ -123,45 +120,28 @@ def signal_handler(signal, frame):
 
     print('You pressed Ctrl+C!')
 
-    momenta_3 = np.asarray(momenta_3_list)
-    t_pt_diff = np.asarray(t_pt_diff_list)
+    make_root_2hists(jets_record['px'], 1.0, 50, -1000, 1000., 'jets px', histname='jets_px')
+    make_root_2hists(jets_record['py'], 1.0, 50, -1000, 1000., 'jets py', histname='jets_py')
 
-    make_root_2hists(df_computed_t_had['mass'],df_computed_t_had['weight'], 50, 50., 200.,'t mass computed had',\
-                   df_actual_t_had['mass'],df_actual_t_had['weight'],'t mass actual had', histname ='t_mass_had')
+    make_root_2hists(truth_record['px'], 1.0, 50, -1000., 1000., 'muon px', histname='truth_px')
+    make_root_2hists(truth_record['py'], 1.0, 50, -1000., 1000., 'muon py', histname='truth_py')
 
-    make_root_2hists(df_computed_t_lep['mass'],df_computed_t_lep['weight'], 50, 50., 200.,'t mass computed lep',\
-                   df_actual_t_lep['mass'],df_actual_t_lep['weight'],'t mass actual lep', histname ='t_mass_lep')
-    
-    make_root_2hists(df_actual_b_lep['mass'],df_actual_b_lep['weight'], 50, 4.5, 5.5 ,'b mass computed lep', histname ='b_mass_lep')
-    make_root_2hists(df_actual_W_lep['mass'],df_actual_W_lep['weight'], 50, 60., 100. ,'W mass actual lep', histname ='w_mass_lep')
-    make_root_2hists(df_actual_b_lep['E'],df_actual_b_lep['weight'], 50, 0., 500. ,'b E actual lep', histname ='b_E_lep')
-    make_root_2hists(df_actual_t_lep['E'],df_actual_t_lep['weight'], 50, 0., 800. ,'t E actual lep', histname ='t_E_lep')
-    make_root_2hists(df_actual_W_lep['E'],df_actual_W_lep['weight'], 50, 0., 500. ,'w E actual lep', histname ='w_E_lep')
-    make_root_2hists(df_actual_b_lep['Pt'],df_actual_b_lep['weight'], 50, 0., 500. ,'b pt actual lep', histname ='b_pt_lep')
-    make_root_2hists(df_actual_t_lep['Pt'],df_actual_t_lep['weight'], 50, 0., 500. ,'t pt actual lep', \
-                    df_actual_t_had['Pt'],df_actual_t_had['weight'], 't pt actual had',histname ='t_pt')
-    make_root_2hists(df_actual_W_lep['Pt'],df_actual_W_lep['weight'], 50, 0., 500. ,'w pt actual lep', histname ='w_pt_lep')
+    # print('muon eta mean = {}'.format(np.mean(muon_record['eta'])))
+    # print('muon eta std = {}'.format(np.std(muon_record['eta'])))
 
-    # momenta_3 [[p_t_x,p_t_y,p_t_z],[p_w_x,p_w_y,p_w_z],[p_b_x,p_b_y,p_b_z]]
-    number_of_entry = np.shape(momenta_3)[0]
-    make_root_2hists(momenta_3[:,0,0]-momenta_3[:,1,0]-momenta_3[:,2,0],\
-        number_of_entry, 50, -100., 100. ,'px diff(p_t-p_w-p_b)', histname ='px_diff')
-    make_root_2hists(momenta_3[:,0,1]-momenta_3[:,1,1]-momenta_3[:,2,1],\
-        number_of_entry, 50, -100., 100. ,'py diff(p_t-p_w-p_b)', histname ='py_diff')
-    make_root_2hists(momenta_3[:,0,2]-momenta_3[:,1,2]-momenta_3[:,2,2],\
-        number_of_entry, 50, -100., 100. ,'pz diff(p_t-p_w-p_b)', histname ='pz_diff')
-
-    make_root_2hists(t_pt_diff,np.ones(len(t_pt_diff)), 50, -100., 100. ,'pt diff', histname ='pt_diff')
-
-    # name 4-momentum 
-    # Converting to np array to change dtype
-    # np.savetxt(dir_plots + 'outliers_had.txt',np.array(outliers_had, dtype = object), \
-    #     header = 'E(t) Px(t) Py(t) Pz(t) E(b) Px(b) Py(b) Pz(b) E(w) Px(w) Py(w) Pz(w) Computed_Mass_t Actual_Mass_t',\
-    #      fmt=' '.join(['%1.3f']*np.shape(outliers_had)[1]),delimiter=',')
+    # print('number of good events is {}'.format(n_good))
+    # print('number of jet-missing events is {}'.format(jet_missing_event_n))
+    # print('number of jet-missing events is(due to cut) {}'.format(jet_missing_event_by_cut_n))
+    # print('number of checked events is {}'.format(ientry))
     
     sys.exit(0)
 
-# signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+data_points = ['phi', 'eta', 'Pt', 'Mass', 'px', 'py']
+jets_record = pd.DataFrame(columns = data_points)
+muon_record = pd.DataFrame(columns = data_points)
+truth_record = pd.DataFrame(columns = data_points)
 
 # LOGGING
 try:
@@ -224,6 +204,9 @@ print("INFO: using data augmentation: rotateZ %ix" % n_data_aug)
 # Number of events which are actually copied over
 n_good = 0
 
+# number of events with missing jets 
+jet_missing_event_n = 0
+jet_missing_event_by_cut_n = 0
 
 # Looping through the reconstructed entries
 for ientry in range(n_entries):
@@ -251,16 +234,17 @@ for ientry in range(n_entries):
         continue
     if jets_n < 4:
         print("Missing jets: {}. Applying cuts".format(jets_n))
+        jet_missing_event_n += 1
         continue
 
     ##############################################################
     # Muon vector. Replaced E w/ T
     lep = TLorentzVector()
-    lep.SetPtEtaPhiM( tree.GetLeaf("Muon.PT").GetValue(0),
-                      tree.GetLeaf("Muon.Eta").GetValue(0),
-                      tree.GetLeaf("Muon.Phi").GetValue(0),
-                      0
-                      )
+    pt_temp = tree.GetLeaf("Muon.PT").GetValue(0)
+    eta_temp = tree.GetLeaf("Muon.Eta").GetValue(0)
+    phi_temp = tree.GetLeaf("Muon.Phi").GetValue(0)
+    lep.SetPtEtaPhiM( pt_temp,eta_temp,phi_temp,0)
+
     lep.sumPT = tree.GetLeaf("Muon.SumPt").GetValue(0)
     if lep.Pt() < 20:
         print("Lepton PT below threshold: {}. Applying cuts".format(lep.Pt()))
@@ -287,12 +271,13 @@ for ientry in range(n_entries):
             jets += [ TLorentzVector() ]
             j = jets[-1]
             j.index = i
-            j.SetPtEtaPhiM(
-            tree.GetLeaf("Jet.PT").GetValue(i),
-            tree.GetLeaf("Jet.Eta").GetValue(i),
-            tree.GetLeaf("Jet.Phi").GetValue(i),
-            tree.GetLeaf("Jet.Mass").GetValue(i))
+            pt_temp = tree.GetLeaf("Jet.PT").GetValue(i)
+            eta_temp = tree.GetLeaf("Jet.Eta").GetValue(i)
+            phi_temp = tree.GetLeaf("Jet.Phi").GetValue(i)
+            mass_temp = tree.GetLeaf("Jet.Mass").GetValue(i)
+            j.SetPtEtaPhiM(pt_temp, eta_temp, phi_temp, mass_temp)
             j.btag = tree.GetLeaf("Jet.BTag").GetValue(i)
+
             if j.btag > 0.0:
                 bjets_n += 1
                 bjets.append(j)
@@ -300,6 +285,8 @@ for ientry in range(n_entries):
     jets_n = len(jets)
     if jets_n < 4:
         print("Missing jets: {}. Applying cuts".format(jets_n))
+        jet_missing_event_n += 1
+        jet_missing_event_by_cut_n += 1
         continue
 
     ##############################################################
@@ -327,7 +314,13 @@ for ientry in range(n_entries):
                         tree.GetLeaf("Particle.Phi").GetValue(indices['t_had']),
                         tree.GetLeaf("Particle.Mass").GetValue(indices['t_had'])
                         )
-
+    # print('t had with root: Px = {}\n'.format(t_had.Px()))
+    # print('t had with hand: Px = {}\n'.format(t_had.Pt()*np.cos(t_had.Phi())))
+    # print('t had with root: Py = {}\n'.format(t_had.Py()))
+    # print('t had with hand: Py = {}\n'.format(t_had.Pt()*np.sin(t_had.Phi())))
+    # print('t had with root: Pz = {}\n'.format(t_had.Pz()))
+    # print('t had with hand: Pz = {}\n'.format(t_had.Pt()*np.sinh(t_had.Eta())))
+    
     W_had.SetPtEtaPhiM( tree.GetLeaf("Particle.PT").GetValue(indices['W_had']),
                         tree.GetLeaf("Particle.Eta").GetValue(indices['W_had']),
                         tree.GetLeaf("Particle.Phi").GetValue(indices['W_had']),
@@ -352,7 +345,7 @@ for ientry in range(n_entries):
     b_lep.SetPtEtaPhiM( tree.GetLeaf("Particle.PT").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Eta").GetValue(indices['b_lep']),
                         tree.GetLeaf("Particle.Phi").GetValue(indices['b_lep']),
-                        tree.GetLeaf("Particle.Mass").GetValue(indices['b_lep']))
+                        tree.GetLeaf("Particle.Mass").GetValue(indices['b_lep']))    
 
     ##############################################################
     # CUTS USING PARTICLE LEVEL OBJECTS
@@ -362,6 +355,8 @@ for ientry in range(n_entries):
     if (t_lep.Pz() == 0.) or (t_lep.M() != t_lep.M()):
         print("Invalid t_lep values, P_z = {0}, M = {1}".format(t_lep.Pz(), t_lep.M()))
         continue
+
+    #     ## The following was all commented out
     # if W_had.Pt() < 20:
     #     print("Invalid W_had.pt: {}".format(W_had.Pt()))
     #     continue
@@ -374,12 +369,12 @@ for ientry in range(n_entries):
     # if b_lep.Pt() < 20:
     #     print("Invalid b_lep.pt: {}".format(b_lep.Pt()))
     #     continue
-    # # if np.abs(W_had.Eta()) > 2.5:
-    # #     print("Invalid W_had.eta: {}".format(W_had.Eta()))
-    # #     continue
-    # # if np.abs(W_lep.Eta()) > 2.5:
-    # #     print("Invalid W_lep.eta: {}".format(W_lep.Eta()))
-    # #     continue
+    # if np.abs(W_had.Eta()) > 2.5:
+    #     print("Invalid W_had.eta: {}".format(W_had.Eta()))
+    #     continue
+    # if np.abs(W_lep.Eta()) > 2.5:
+    #     print("Invalid W_lep.eta: {}".format(W_lep.Eta()))
+    #     continue
     # if np.abs(b_had.Eta()) > 2.5:
     #     print("Invalid b_had.eta: {}".format(b_had.Eta()))
     #     continue
@@ -409,6 +404,24 @@ for ientry in range(n_entries):
 
     vertex_n = tree.GetLeaf("Vertex_size").GetValue(0)
 
+    # record the data for ploting 
+    truth_record = truth_record.append({'phi':W_had.Phi(), 'eta':W_had.Eta(), 'Pt': W_had.Pt(), 'mass':W_had.M(), \
+        'px':W_had.Px(), 'py':W_had.Py()}, ignore_index=True)
+    truth_record = truth_record.append({'phi':W_had.Phi(), 'eta':W_lep.Eta(), 'Pt': W_lep.Pt(), 'mass':W_lep.M(), \
+        'px':W_lep.Px(), 'py':W_lep.Py()}, ignore_index=True)
+    truth_record = truth_record.append({'phi':b_had.Phi(), 'eta':b_had.Eta(), 'Pt': b_had.Pt(), 'mass':b_had.M(), \
+        'px':b_had.Px(), 'py':b_had.Py()}, ignore_index=True)
+    truth_record = truth_record.append({'phi':b_lep.Phi(), 'eta':b_lep.Eta(), 'Pt': b_lep.Pt(), 'mass':b_lep.M(), \
+        'px':b_lep.Px(), 'py':b_lep.Py()}, ignore_index=True)
+    truth_record = truth_record.append({'phi':t_had.Phi(), 'eta':t_had.Eta(), 'Pt': t_had.Pt(), 'mass':t_had.M(), \
+        'px':t_had.Px(), 'py':t_had.Py()}, ignore_index=True)
+    truth_record = truth_record.append({'phi':t_lep.Phi(), 'eta':t_lep.Eta(), 'Pt': t_lep.Pt(), 'mass':t_lep.M(), \
+        'px':t_lep.Px(), 'py':t_lep.Py()}, ignore_index=True)
+
+    # record the data for ploting 
+    for jet in jets:
+        jets_record = jets_record.append({'phi':jet.Phi(), 'eta':jet.Eta(), 'Pt': jet.Pt(), 'mass':jet.M(), \
+            'px': jet.Px(), 'py':jet.Py()}, ignore_index=True)
 
     ##############################################################
     # Augment Data By Rotating 5 Different Ways

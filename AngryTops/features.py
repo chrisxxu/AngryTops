@@ -85,6 +85,20 @@ output_columns_ptetaphiM = [
 "target_t_had_Pt", "target_t_had_Eta", "target_t_had_Phi", "target_t_had_M",
 "target_t_lep_Pt", "target_t_lep_Eta", "target_t_lep_Phi", "target_t_lep_M"]
 
+output_columns_all= [
+"target_W_had_Pt", "target_W_had_Eta", "target_W_had_Phi",
+"target_W_had_Px", "target_W_had_Py", "target_W_had_Pz", "target_W_had_M",
+"target_W_lep_Pt", "target_W_lep_Eta", "target_W_lep_Phi", 
+"target_W_lep_Px", "target_W_lep_Py", "target_W_lep_Pz", "target_W_lep_M",
+"target_b_had_Pt", "target_b_had_Eta", "target_b_had_Phi",
+"target_b_had_Px", "target_b_had_Py", "target_b_had_Pz", "target_b_had_M",
+"target_b_lep_Pt", "target_b_lep_Eta", "target_b_lep_Phi", 
+"target_b_lep_Px", "target_b_lep_Py", "target_b_lep_Pz", "target_b_lep_M",
+"target_t_had_Pt", "target_t_had_Eta", "target_t_had_Phi",
+"target_t_had_Px", "target_t_had_Py", "target_t_had_Pz", "target_t_had_M",
+"target_t_lep_Pt", "target_t_lep_Eta", "target_t_lep_Phi", 
+"target_t_lep_Px", "target_t_lep_Py", "target_t_lep_Pz", "target_t_lep_M"]
+
 #================================================================================
 # INPUT COLUMNS
 # pxpypz representation
@@ -127,6 +141,23 @@ jets_ptetaphiEM = [
 "jet3 Pt",  "jet3 Eta",  "jet3 Phi",  "jet3 E", "jet3 M",
 "jet4 Pt",  "jet4 Eta",  "jet4 Phi",  "jet4 E", "jet4 M"]
 
+jets_all = [
+"jet0 Pt", "jet0 Eta", "jet0 Phi", 
+"jet0 P_x", "jet0 P_y", "jet0 P_z",  
+"jet0 E", "jet0 M",
+"jet1 Pt", "jet1 Eta", "jet1 Phi", 
+"jet1 P_x", "jet1 P_y", "jet1 P_z", 
+"jet1 E", "jet1 M",
+"jet2 Pt", "jet2 Eta", "jet2 Phi", 
+"jet2 P_x", "jet2 P_y", "jet2 P_z", 
+"jet2 E", "jet2 M",
+"jet3 Pt", "jet3 Eta", "jet3 Phi",
+"jet3 P_x", "jet3 P_y", "jet3 P_z", 
+"jet3 E", "jet3 M",
+"jet4 Pt", "jet4 Eta", "jet4 Phi", 
+"jet4 P_x", "jet4 P_y", "jet4 P_z", 
+"jet4 E", "jet4 M"]
+
 #================================================================================
 # LEPTON + MET COLUMNS
 
@@ -143,6 +174,8 @@ lep_cart_ext = ["lep Px", "lep Py", "lep Pz", "lep sum_Pt", "met_met", "met_phi"
 
 # Lepton info (ptetaphi) + Energy + missing transverse energy info
 lep_ptetaphiE = ["lep Pt", "lep Eta", "lep Phi", "lep E", "met_met", "met_phi"]
+
+lep_all= ["lep Pt", "lep Eta", "lep Phi", "lep Px", "lep Py", "lep Pz","lep E", "met_met", "met_phi"]
 
 # Lepton info experimental
 lep_exp = ["lep Px", "lep Py", "lep Pz", "met_met"]
@@ -281,7 +314,8 @@ representations = {
  "ptetaphiEM": [lep_ptetaphiE, jets_ptetaphiEM, output_columns_ptetaphi],
  "ptetaphiE": [lep_ptetaphiE, jets_ptetaphiEM, output_columns_ptetaphiE],
  "ptetaphiM": [lep_ptetaphiE, jets_ptetaphiEM, output_columns_ptetaphiE],
- "experimental": [lep_cart, jets_pxpypzE, output_columns_pxpypz]
+ "experimental": [lep_cart, jets_pxpypzE, output_columns_pxpypz],
+ "all":[lep_all, jets_all, output_columns_all]
  }
 
  # A disctionary containing output information for each particle
